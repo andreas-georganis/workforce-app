@@ -1,0 +1,27 @@
+<Solution>
+    <Folder Name="/Solution Items/">
+        <File Path="Directory.Build.props" />
+        <File Path="Directory.Packages.props" />
+        <File Path=".editorConfig" />
+        <File Path="README.md" />
+        <File Path="global.json" />
+        <File Path="nuget.config" />
+    </Folder>
+    <Folder Name="/src/" />
+    <Folder Name="/src/aspire/">
+        <Project Path="src/aspire/Workforce.AppHost/Workforce.AppHost.csproj" />
+        <Project Path="src/aspire/Workforce.ServiceDefaults/Workforce.ServiceDefaults.csproj" />
+    </Folder>
+    <Folder Name="/src/backend/">
+        <Project Path="src/backend/Workforce.API/Workforce.API.csproj" />
+        <Project Path="src/backend/Workforce.Domain/Workforce.Domain.csproj" />
+        <Project Path="src/backend/Workforce.Infrastructure/Workforce.Infrastructure.csproj" />
+        <Project Path="src/backend/Workforce.Migrator/Workforce.Migrator.csproj" />
+    </Folder>
+    <Folder Name="/src/frontend/" />
+    <Folder Name="/src/frontend/Workforce.Web/">
+        <Project Path="src/frontend/Workforce.Web/Workforce.Web.Client/Workforce.Web.Client.csproj" />
+        <Project Path="src/frontend/Workforce.Web/Workforce.Web/Workforce.Web.csproj" />
+    </Folder>
+  
+</Solution>
