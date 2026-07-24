@@ -6,7 +6,7 @@ public readonly record struct EmployeeId : IParsable<EmployeeId>
 {
     public static EmployeeId New() => new(Guid.CreateVersion7());
 
-    private EmployeeId(Guid value)
+    public EmployeeId(Guid value)
     {
        Value = value;
     }
