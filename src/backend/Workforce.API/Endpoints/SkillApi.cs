@@ -30,7 +30,7 @@ public static class SkillApi
 
         group.MapPost("/", async Task<Created<Workforce.API.Contracts.Skill>> (WorkforceDbContext db, Workforce.API.Contracts.Skill newSkill, CancellationToken cancellationToken) =>
         {
-            var skill = new Domain.Model.Skill(newSkill.Id, newSkill.Name);
+            var skill = new Domain.Model.Skill(newSkill.Id!.Value, newSkill.Name);
 
             await db.Skills.AddAsync(skill, cancellationToken);
 

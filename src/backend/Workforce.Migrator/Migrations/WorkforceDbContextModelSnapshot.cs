@@ -16,7 +16,7 @@ partial class WorkforceDbContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20260724202351_Initial";
+    public override string LastMigrationId => "20260726002122_Initial";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -33,7 +33,6 @@ partial class WorkforceDbContextModelSnapshot : ModelSnapshot
         modelBuilder.Entity("Workforce.Domain.Model.Employee", b =>
             {
                 b.Property<Guid>("Id")
-                    .ValueGeneratedOnAdd()
                     .HasColumnType("uniqueidentifier")
                     .HasColumnName("Id")
                     .HasDefaultValueSql("NEWSEQUENTIALID()");
@@ -58,6 +57,9 @@ partial class WorkforceDbContextModelSnapshot : ModelSnapshot
 
                 b.HasKey("Id");
 
+                b.HasIndex("Email")
+                    .IsUnique();
+
                 b.ToTable("Employees");
             });
 
@@ -76,6 +78,9 @@ partial class WorkforceDbContextModelSnapshot : ModelSnapshot
                     .HasColumnName("Name");
 
                 b.HasKey("Id");
+
+                b.HasIndex("Name")
+                    .IsUnique();
 
                 b.ToTable("Skills");
             });
@@ -104,9 +109,10 @@ partial class WorkforceDbContextModelSnapshot : ModelSnapshot
 
                         b1.HasKey("Id");
 
-                        b1.HasIndex("EmployeeId");
-
                         b1.HasIndex("SkillId");
+
+                        b1.HasIndex("EmployeeId", "SkillId")
+                            .IsUnique();
 
                         b1.ToTable("EmployeeSkill");
 

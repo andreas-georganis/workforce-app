@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Workforce.Web;
 using Workforce.Web.Client.Pages;
 using Workforce.Web.Components;
 
@@ -5,12 +8,70 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.Services.AddAuthentication("oidc").AddOpenIdConnect("oidc", oidcOptions =>
+{
+    // For the following OIDC settings, any line that's commented out
+    // represents a DEFAULT setting. If you adopt the default, you can
+    // remove the line if you wish.
+
+    //oidcOptions.PushedAuthorizationBehavior = PushedAuthorizationBehavior.UseIfAvailable;
+
+    oidcOptions.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+    //oidcOptions.Scope.Add(OpenIdConnectScope.OpenIdProfile);
+    //oidcOptions.CallbackPath = new PathString("/signin-oidc");
+    //oidcOptions.SignedOutCallbackPath = new PathString("/signout-callback-oidc");
+    //oidcOptions.RemoteSignOutPath = new PathString("/signout-oidc");
+
+
+    oidcOptions.Authority = builder.Configuration["OIDC:Authority"];
+    oidcOptions.ClientId = builder.Configuration["OIDC:ClientId"];
+    oidcOptions.ClientSecret = builder.Configuration["OIDC:ClientSecret"];
+    oidcOptions.ResponseType = OpenIdConnectResponseType.Code;
+
+
+    oidcOptions.MapInboundClaims = false;
+    oidcOptions.TokenValidationParameters.NameClaimType = "name";
+    oidcOptions.TokenValidationParameters.RoleClaimType = "roles";
+
+    // ........................................................................
+    // OIDC connect options set later via ConfigureCookieOidc
+    //
+    // (1) The "offline_access" scope is required for the refresh token.
+    //
+    // (2) SaveTokens is set to true, which saves the access and refresh tokens
+    // in the cookie, so the app can authenticate requests for weather data and
+    // cookie, so the app can authenticate requests for weather data and
+    // use the refresh token to obtain a new access token on access token
+    // expiration.
+    // ........................................................................
+
+    oidcOptions.SaveTokens = true;
+    //oidcOptions.GetClaimsFromUserInfoEndpoint = true;
+
+    oidcOptions.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
+
+// ConfigureCookieOidc attaches a cookie OnValidatePrincipal callback to get
+// a new access token when the current one expires, and reissue a cookie with the
+// new access token saved inside. If the refresh fails, the user will be signed
+// out. OIDC connect options are set for saving tokens and the offline access
+// scope.
+builder.Services.ConfigureCookieOidc(CookieAuthenticationDefaults.AuthenticationScheme, "oidc");
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddHttpForwarderWithServiceDiscovery();
+builder.Services.AddHttpContextAccessor();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
-    .AddInteractiveWebAssemblyComponents();
-
-builder.Services.AddHttpForwarderWithServiceDiscovery();
+    .AddInteractiveWebAssemblyComponents()
+    .AddAuthenticationStateSerialization(options => options.SerializeAllClaims = true);
 
 var app = builder.Build();
 

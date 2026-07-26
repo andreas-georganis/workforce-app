@@ -1,9 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
-
+using System.Text.Json.Serialization;
 namespace Workforce.Domain.Model;
 
-
-public sealed class YearsOfExperience : IParsable<YearsOfExperience>
+[JsonConverter(typeof(ValueObjectJsonConverter<YearsOfExperience, int>))]
+public sealed class YearsOfExperience : IValueObject<YearsOfExperience, int>
 {
     public YearsOfExperience(int value)
     {
@@ -12,6 +12,9 @@ public sealed class YearsOfExperience : IParsable<YearsOfExperience>
     }
 
     public int Value { get; }
+
+    public static YearsOfExperience New(int value)
+        => new(value);
 
     public static YearsOfExperience Parse(string s, IFormatProvider? provider)
         => TryParse(s, provider, out var result)? result: throw new FormatException();

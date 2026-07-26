@@ -40,6 +40,9 @@ class EmployeeEntityTypeConfiguration : IEntityTypeConfiguration<Employee>
             .HasMaxLength(200)
             .HasColumnName("Email");
 
+        builder.HasIndex(x=>x.Email)
+            .IsUnique();
+
         builder.OwnsMany(x=>x.Skills, skill =>
         {
             skill.Property<long>("Id").UseHiLo("employeeskillseq");
@@ -50,6 +53,7 @@ class EmployeeEntityTypeConfiguration : IEntityTypeConfiguration<Employee>
 
             skill.WithOwner().HasForeignKey("EmployeeId");
 
+            skill.HasIndex("EmployeeId", "SkillId").IsUnique();
 
             skill.Property(s => s.SkillId)
                 .HasConversion(

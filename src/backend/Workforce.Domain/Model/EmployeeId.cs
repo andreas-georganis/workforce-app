@@ -1,7 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
-
+using System.Text.Json.Serialization;
 namespace Workforce.Domain.Model;
 
+[JsonConverter(typeof(ParsableJsonConverter<EmployeeId>))]
 public readonly record struct EmployeeId : IParsable<EmployeeId>
 {
     public static EmployeeId New() => new(Guid.CreateVersion7());
@@ -21,7 +22,7 @@ public readonly record struct EmployeeId : IParsable<EmployeeId>
         if (string.IsNullOrWhiteSpace(s))
         {
             result = default;
-            return false;
+            return true;
         }
 
         if (!Guid.TryParse(s, out var id))
@@ -33,4 +34,6 @@ public readonly record struct EmployeeId : IParsable<EmployeeId>
         result = new(id);
         return true;
     }
+
+    override public string ToString() => Value.ToString();
 }

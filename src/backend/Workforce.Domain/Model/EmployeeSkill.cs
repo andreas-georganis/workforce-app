@@ -23,4 +23,6 @@ public sealed class EmployeeSkill : IEquatable<EmployeeSkill>
 
         return SkillId.Equals(other.SkillId);
     }
+
+    public override int GetHashCode() => SkillId.GetHashCode();
 }

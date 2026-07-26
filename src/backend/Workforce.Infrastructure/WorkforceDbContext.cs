@@ -15,4 +15,5 @@ public class WorkforceDbContext(DbContextOptions<WorkforceDbContext> options) : 
     {
         builder.ApplyConfigurationsFromAssembly(typeof(WorkforceDbContext).Assembly);
     }
+
 }

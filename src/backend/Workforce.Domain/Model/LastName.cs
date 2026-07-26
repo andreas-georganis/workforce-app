@@ -1,7 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
-
+using System.Text.Json.Serialization;
 namespace Workforce.Domain.Model;
 
+[JsonConverter(typeof(ParsableJsonConverter<LastName>))]
 public sealed class LastName : IParsable<LastName>
 {
     public LastName(string value)
@@ -10,6 +11,9 @@ public sealed class LastName : IParsable<LastName>
     }
 
     public string Value { get; }
+
+    public static LastName New(string value)
+        => new(value);
 
     public static LastName Parse(string s, IFormatProvider? provider)
         => TryParse(s, provider, out var result)? result: throw new FormatException();
@@ -25,4 +29,6 @@ public sealed class LastName : IParsable<LastName>
         result = new LastName(s);
         return true;
     }
+
+    public override string ToString() => Value;
 }

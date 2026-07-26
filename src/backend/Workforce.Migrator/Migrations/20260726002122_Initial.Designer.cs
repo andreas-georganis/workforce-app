@@ -12,8 +12,8 @@ using Workforce.Infrastructure;
 namespace Workforce.Migrator.Migrations;
 
 [DbContext(typeof(WorkforceDbContext))]
-[Migration("20260724202351_Initial")]
-partial class _20260724202351_Initial
+[Migration("20260726002122_Initial")]
+partial class _20260726002122_Initial
 {
     /// <inheritdoc />
     protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,7 +31,6 @@ partial class _20260724202351_Initial
         modelBuilder.Entity("Workforce.Domain.Model.Employee", b =>
             {
                 b.Property<Guid>("Id")
-                    .ValueGeneratedOnAdd()
                     .HasColumnType("uniqueidentifier")
                     .HasColumnName("Id")
                     .HasDefaultValueSql("NEWSEQUENTIALID()");
@@ -56,6 +55,9 @@ partial class _20260724202351_Initial
 
                 b.HasKey("Id");
 
+                b.HasIndex("Email")
+                    .IsUnique();
+
                 b.ToTable("Employees");
             });
 
@@ -74,6 +76,9 @@ partial class _20260724202351_Initial
                     .HasColumnName("Name");
 
                 b.HasKey("Id");
+
+                b.HasIndex("Name")
+                    .IsUnique();
 
                 b.ToTable("Skills");
             });
@@ -102,9 +107,10 @@ partial class _20260724202351_Initial
 
                         b1.HasKey("Id");
 
-                        b1.HasIndex("EmployeeId");
-
                         b1.HasIndex("SkillId");
+
+                        b1.HasIndex("EmployeeId", "SkillId")
+                            .IsUnique();
 
                         b1.ToTable("EmployeeSkill");
 

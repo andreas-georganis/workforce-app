@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Workforce.Migrator.Migrations;
 
 /// <inheritdoc />
-public partial class _20260724202351_Initial : Migration
+public partial class _20260726002122_Initial : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -69,14 +69,27 @@ public partial class _20260724202351_Initial : Migration
             });
 
         migrationBuilder.CreateIndex(
-            name: "IX_EmployeeSkill_EmployeeId",
+            name: "IX_Employees_Email",
+            table: "Employees",
+            column: "Email",
+            unique: true);
+
+        migrationBuilder.CreateIndex(
+            name: "IX_EmployeeSkill_EmployeeId_SkillId",
             table: "EmployeeSkill",
-            column: "EmployeeId");
+            columns: new[] { "EmployeeId", "SkillId" },
+            unique: true);
 
         migrationBuilder.CreateIndex(
             name: "IX_EmployeeSkill_SkillId",
             table: "EmployeeSkill",
             column: "SkillId");
+
+        migrationBuilder.CreateIndex(
+            name: "IX_Skills_Name",
+            table: "Skills",
+            column: "Name",
+            unique: true);
     }
 
     /// <inheritdoc />

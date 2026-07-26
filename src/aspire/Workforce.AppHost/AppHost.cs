@@ -1,7 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 var sqlserver = builder
-    .AddSqlServer("sql-server")
+    .AddSqlServer("sqlserver")
     .WithDataVolume()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDbGate().ExcludeFromManifest()
@@ -9,20 +9,43 @@ var sqlserver = builder
 
 var db = sqlserver.AddDatabase("WorkforceDb");
 
+var dexYaml = Path.Combine(AppContext.BaseDirectory, "dex-config.yaml");
+var dex = builder.AddContainer("dex", "ghcr.io/dexidp/dex", "latest")
+     .WithHttpEndpoint(
+        name: "http",
+        port: 5556,          // fixed host port
+        targetPort: 5556,
+        isProxied: false     // we want direct access for OIDC redirects
+    )
+    .WithBindMount(dexYaml, "/etc/dex/config.docker.yaml")
+    .WithArgs("dex", "serve", "/etc/dex/config.docker.yaml");
+
 var api = builder.AddProject<Projects.Workforce_API>("workforce-api")
-    .WithReference(db);
+    .WithReference(db)
+    .WithEnvironment("JWT__Authority", "http://127.0.0.1:5556/dex")
+    .WithEnvironment("JWT__Audience", "workforce-app");
 
-// var migrator = builder.AddProject<Projects.Workforce_Migrator>("workforce-migrator")
-//     .WithReference(db)
-//     .WaitFor(db);
+var migrator = builder.AddProject<Projects.Workforce_Migrator>("workforce-migrator")
+    .WithReference(db)
+    .WaitFor(db);
 
-var migrator = api.AddEFMigrations("api-migrations").WithMigrationsProject<Projects.Workforce_Migrator>().RunDatabaseUpdateOnStart();
+var migration = migrator.AddEFMigrations("api-migration")
+    .WithMigrationsProject<Projects.Workforce_Migrator>()
+    .WithReference(db)
+    .WaitFor(db)
+    .RunDatabaseUpdateOnStart()
+    .PublishAsMigrationScript()
+    .PublishAsMigrationBundle();
 
-api.WaitForCompletion(migrator);
+api.WaitForCompletion(migration);
 
-var _ = builder.AddProject<Projects.Workforce_Web>("workforce-web")
+var web = builder.AddProject<Projects.Workforce_Web>("workforce-web")
+    .WithEndpoint("http", e => e.Port = 5000) // fixed port
     .WithReference(api)
     .WaitFor(api)
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithEnvironment("OIDC__Authority", "http://127.0.0.1:5556/dex")
+    .WithEnvironment("OIDC__ClientId", "workforce-app")
+    .WithEnvironment("OIDC__ClientSecret", "ZXhhbXBsZS1hcHAtc2VjcmV0");
 
 builder.Build().Run();

@@ -5,7 +5,15 @@ namespace Workforce.API.Contracts;
 
 public sealed class Employee
 {
-    public EmployeeId Id { get; init; } = EmployeeId.New();
+
+    public EmployeeId? Id
+    {
+        get;
+        init
+        {
+            field = value?? EmployeeId.New();
+        }
+    }
 
     [Required]
     public required FirstName FirstName { get; init; }

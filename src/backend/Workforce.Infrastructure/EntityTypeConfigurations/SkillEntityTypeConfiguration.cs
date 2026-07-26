@@ -24,6 +24,9 @@ class SkillEntityTypeConfiguration : IEntityTypeConfiguration<Skill>
                 value => new SkillName(value))
             .HasMaxLength(75)
             .HasColumnName("Name");
+
+        builder.HasIndex(x=>x.Name)
+            .IsUnique();
     }
 }
 

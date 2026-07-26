@@ -28,7 +28,7 @@ public sealed class Employee
     {
         if (!_skills.Add(new EmployeeSkill(skillId, proficiency, yearsOfExperience)))
         {
-            throw new WorkforceDomainException("");
+            throw new WorkforceDomainException("Skill already assigned to employee.");
         }
     }
 }
