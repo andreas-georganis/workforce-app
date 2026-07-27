@@ -35,4 +35,21 @@ public sealed class EmployeeClient(HttpClient httpClient) : IEmployeeClient
         using var response = await httpClient.PutAsJsonAsync($"api/employees/{employeeSkill.EmployeeId}/skills/{employeeSkill.SkillId}", body, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
+
+    public async Task<Employee?> CreateEmployeeAsync(Employee employee, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(employee);
+
+        var createRequest = new
+        {
+            employee.FirstName,
+            employee.LastName,
+            employee.Email
+        };
+
+        using var response = await httpClient.PostAsJsonAsync("api/employees", createRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<Employee>(cancellationToken: cancellationToken);
+    }
 }

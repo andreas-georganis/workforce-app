@@ -14,6 +14,13 @@
     </div>
 }
 
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success" role="alert">
+        @successMessage
+    </div>
+}
+
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
     <div>
         <label class="form-label" for="employee-skill-filter">Skill Filter</label>
@@ -32,8 +39,39 @@
         <button class="btn btn-outline-primary" @onclick="LoadEmployeesAsync" disabled="@isLoading">
             @(isLoading ? "Loading..." : "Reload")
         </button>
+        <button class="btn btn-primary" @onclick="ToggleCreateForm" disabled="@(isLoading || isSubmitting)">
+            @(showCreateForm ? "Cancel" : "New Employee")
+        </button>
     </div>
 </div>
+
+@if (showCreateForm)
+{
+    <EditForm Model="employeeDraft" OnValidSubmit="CreateEmployeeAsync" class="card card-body mb-3">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label" for="employee-first-name">First Name</label>
+                <InputText id="employee-first-name" class="form-control" @bind-Value="employeeDraft.FirstName" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="employee-last-name">Last Name</label>
+                <InputText id="employee-last-name" class="form-control" @bind-Value="employeeDraft.LastName" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="employee-email">Email</label>
+                <InputText id="employee-email" class="form-control" @bind-Value="employeeDraft.Email" />
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-success" disabled="@isSubmitting">@(isSubmitting ? "Saving..." : "Save Employee")</button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="ToggleCreateForm" disabled="@isSubmitting">Close</button>
+        </div>
+    </EditForm>
+}
 
 @if (isLoading)
 {
@@ -62,10 +100,15 @@ else
 @code {
     private readonly List<Employee> employees = [];
     private readonly List<Skill> skills = [];
+    private readonly Employee employeeDraft = new();
     private Guid? selectedSkillId;
 
     private bool isLoading;
+    private bool isSubmitting;
+    private bool showCreateForm;
+
     private string? errorMessage;
+    private string? successMessage;
 
     protected override Task OnInitializedAsync()
     {
@@ -83,6 +126,7 @@ else
     {
         isLoading = true;
         errorMessage = null;
+        successMessage = null;
 
         try
         {
@@ -116,6 +160,7 @@ else
     {
         isLoading = true;
         errorMessage = null;
+        successMessage = null;
 
         try
         {
@@ -143,5 +188,49 @@ else
     {
         selectedSkillId = null;
         return LoadEmployeesAsync();
+    }
+
+    private void ToggleCreateForm()
+    {
+        showCreateForm = !showCreateForm;
+        errorMessage = null;
+        successMessage = null;
+
+        if (!showCreateForm)
+        {
+            employeeDraft.FirstName = string.Empty;
+            employeeDraft.LastName = string.Empty;
+            employeeDraft.Email = string.Empty;
+        }
+    }
+
+    private async Task CreateEmployeeAsync()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var createdEmployee = await EmployeeClient.CreateEmployeeAsync(employeeDraft);
+            if (createdEmployee is not null)
+            {
+                employees.Add(createdEmployee);
+            }
+
+            successMessage = "Employee created successfully.";
+            showCreateForm = false;
+            employeeDraft.FirstName = string.Empty;
+            employeeDraft.LastName = string.Empty;
+            employeeDraft.Email = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to create employee: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 }
