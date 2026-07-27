@@ -17,6 +17,7 @@ var dex = builder.AddContainer("dex", "ghcr.io/dexidp/dex", "latest")
         targetPort: 5556,
         isProxied: false     // we want direct access for OIDC redirects
     )
+    .WithEnvironment("DEX_SESSIONS_ENABLED", "true")
     .WithBindMount(dexYaml, "/etc/dex/config.docker.yaml")
     .WithArgs("dex", "serve", "/etc/dex/config.docker.yaml");
 
@@ -40,7 +41,7 @@ var migration = migrator.AddEFMigrations("api-migration")
 api.WaitForCompletion(migration);
 
 var web = builder.AddProject<Projects.Workforce_Web>("workforce-web")
-    .WithEndpoint("http", e => e.Port = 5000) // fixed port
+    // .WithHttpEndpoint(targetPort: 5000)
     .WithReference(api)
     .WaitFor(api)
     .WithExternalHttpEndpoints()

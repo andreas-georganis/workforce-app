@@ -4,7 +4,7 @@ using Workforce.Infrastructure;
 
 namespace Workforce.API;
 
-public class UniqueConstraintViolationExceptionHandler : IExceptionHandler
+public class DefaultExceptionHandler : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {

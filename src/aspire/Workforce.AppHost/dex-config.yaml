@@ -85,27 +85,28 @@ telemetry:
 #   tlsKey: examples/grpc-client/server.key
 #   tlsClientCA: examples/grpc-client/ca.crt
 
-# Uncomment this block to enable configuration for the expiration time durations.
-# Is possible to specify units using only s, m and h suffixes.
-# expiry:
-#   deviceRequests: "5m"
-#   signingKeys: "6h" # deprecated, use signer.config.keysRotationPeriod
-#   idTokens: "24h"
-#   refreshTokens:
-#     reuseInterval: "3s"
-#     validIfNotUsedFor: "2160h" # 90 days
-#     absoluteLifetime: "3960h" # 165 days
+# Explicit token expiry configuration.
+# Durations support s, m and h suffixes.
+expiry:
+  deviceRequests: "5m"
+  # signingKeys: "6h" # deprecated, use signer.config.keysRotationPeriod
+  idTokens: "24h"
+  refreshTokens:
+    # Small overlap window for concurrent refresh calls from the same session.
+    reuseInterval: "30s"
+    validIfNotUsedFor: "2160h" # 90 days
+    absoluteLifetime: "3960h" # 165 days
 
 # Authentication sessions configuration.
 # Requires DEX_SESSIONS_ENABLED=true feature flag.
-# sessions:
-#   cookieName: "dex_session"
-#   absoluteLifetime: "24h"
-#   validIfNotUsedFor: "1h"
-#   rememberMeCheckedByDefault: false
-#   # Default SSO sharing policy for clients without explicit ssoSharedWith.
-#   # "all" = share with all clients (Keycloak-like), "none" = no sharing (default).
-#   ssoSharedWithDefault: "none"
+sessions:
+  cookieName: "dex_session"
+  absoluteLifetime: "24h"
+  validIfNotUsedFor: "24h"
+  rememberMeCheckedByDefault: false
+  # Default SSO sharing policy for clients without explicit ssoSharedWith.
+  # "all" = share with all clients (Keycloak-like), "none" = no sharing (default).
+  ssoSharedWithDefault: "none"
 
 # Options for controlling the logger.
 # logger:
@@ -128,7 +129,7 @@ oauth2:
 #   responseTypes: [ "code" ] # also allowed are "token" and "id_token"
 #   # By default, Dex will ask for approval to share data with application
 #   # (approval for sharing data from connected IdP to Dex is separate process on IdP)
-#   skipApprovalScreen: false
+  skipApprovalScreen: true
 #   # If only one authentication method is enabled, the default behavior is to
 #   # go directly to it. For connected IdPs, this redirects the browser away
 #   # from application to upstream provider such as the Google login page
@@ -178,10 +179,12 @@ oauth2:
 staticClients:
 - id: workforce-app
   redirectURIs:
-  - 'http://localhost:5000/signin-oidc'
+  - 'http://localhost:5051/signin-oidc'
+  - 'https://localhost:7234/signin-oidc'
   # - '/dex/device/callback'
-  # postLogoutRedirectURIs:
-  # - 'http://127.0.0.1:5555/'
+  postLogoutRedirectURIs:
+  - 'http://localhost:5051/signout-callback-oidc'
+  - 'https://localhost:7234/signout-callback-oidc'
   name: 'Workforce App'
   secret: ZXhhbXBsZS1hcHAtc2VjcmV0
   # Optional: restrict which connectors this client can use for authentication.
@@ -219,11 +222,11 @@ connectors:
   name: Example
   # grantTypes restricts which grant types can use this connector.
   # If not specified, all grant types are allowed.
-  Supported values:
-    - "authorization_code"
-    - "implicit"
-    - "refresh_token"
-    - "password"
+  # Supported values:
+  #   - "authorization_code"
+  #   - "implicit"
+  #   - "refresh_token"
+  #   - "password"
   #   - "urn:ietf:params:oauth:grant-type:device_code"
   #   - "urn:ietf:params:oauth:grant-type:token-exchange"
 #  grantTypes:

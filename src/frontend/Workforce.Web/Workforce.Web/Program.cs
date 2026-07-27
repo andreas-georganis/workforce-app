@@ -1,14 +1,17 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Workforce.Web.Client.Clients;
+using Workforce.Web.Clients;
 using Workforce.Web;
-using Workforce.Web.Client.Pages;
 using Workforce.Web.Components;
+using Workforce.Web.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddAuthentication("oidc").AddOpenIdConnect("oidc", oidcOptions =>
+builder.Services.AddAuthentication("oidc")
+.AddOpenIdConnect("oidc", oidcOptions =>
 {
     // For the following OIDC settings, any line that's commented out
     // represents a DEFAULT setting. If you adopt the default, you can
@@ -34,6 +37,38 @@ builder.Services.AddAuthentication("oidc").AddOpenIdConnect("oidc", oidcOptions 
     oidcOptions.TokenValidationParameters.NameClaimType = "name";
     oidcOptions.TokenValidationParameters.RoleClaimType = "roles";
 
+    // oidcOptions.Events.OnRedirectToIdentityProviderForSignOut = context =>
+    // {
+    //     var idTokenHint = context.ProtocolMessage.IdTokenHint;
+    //     if (string.IsNullOrWhiteSpace(idTokenHint))
+    //     {
+    //         return Task.CompletedTask;
+    //     }
+
+    //     var tokenHandler = new JwtSecurityTokenHandler();
+    //     if (!tokenHandler.CanReadToken(idTokenHint))
+    //     {
+    //         context.ProtocolMessage.IdTokenHint = null;
+    //         return Task.CompletedTask;
+    //     }
+
+    //     var token = tokenHandler.ReadJwtToken(idTokenHint);
+
+    //     if (!string.Equals(token.Issuer?.TrimEnd('/'), oidcOptions.Authority?.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))
+    //     {
+    //         context.ProtocolMessage.IdTokenHint = null;
+    //         return Task.CompletedTask;
+    //     }
+
+    //     if (!token.Audiences.Contains(oidcOptions.ClientId, StringComparer.Ordinal))
+    //     {
+    //         context.ProtocolMessage.IdTokenHint = null;
+    //         return Task.CompletedTask;
+    //     }
+
+    //     return Task.CompletedTask;
+    // };
+
     // ........................................................................
     // OIDC connect options set later via ConfigureCookieOidc
     //
@@ -45,9 +80,6 @@ builder.Services.AddAuthentication("oidc").AddOpenIdConnect("oidc", oidcOptions 
     // use the refresh token to obtain a new access token on access token
     // expiration.
     // ........................................................................
-
-    oidcOptions.SaveTokens = true;
-    //oidcOptions.GetClaimsFromUserInfoEndpoint = true;
 
     oidcOptions.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 })
@@ -65,7 +97,21 @@ builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddHttpForwarderWithServiceDiscovery();
+
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<TokenHandler>();
+
+builder.Services.AddHttpClient<IEmployeeClient, ServerEmployeeClient>(httpClient =>
+{
+    httpClient.BaseAddress = new Uri("http://workforce-api");
+})
+.AddHttpMessageHandler<TokenHandler>();
+builder.Services.AddHttpClient<ISkillClient, ServerSkillClient>(httpClient =>
+{
+    httpClient.BaseAddress = new Uri("http://workforce-api");
+})
+.AddHttpMessageHandler<TokenHandler>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -76,6 +122,10 @@ builder.Services.AddRazorComponents()
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
+
+app.MapGroup("/authentication").MapAuthApi();
+app.MapEmployeeApi();
+app.MapSkillApi();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

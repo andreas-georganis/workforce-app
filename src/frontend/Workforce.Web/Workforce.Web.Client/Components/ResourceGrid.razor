@@ -1,0 +1,40 @@
+@typeparam TItem
+
+@if (Items.Count == 0)
+{
+    <p>@EmptyMessage</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                @HeaderTemplate
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Items)
+            {
+                <tr>
+                    @RowTemplate(item)
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<TItem> Items { get; set; } = [];
+
+    [Parameter]
+    public string EmptyMessage { get; set; } = "No items were found.";
+
+    [Parameter]
+    [EditorRequired]
+    public RenderFragment HeaderTemplate { get; set; } = default!;
+
+    [Parameter]
+    [EditorRequired]
+    public RenderFragment<TItem> RowTemplate { get; set; } = default!;
+}

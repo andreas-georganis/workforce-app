@@ -6,9 +6,16 @@
     </div>
 
     <main>
-        <div class="top-row px-4">
+       <div class="top-row px-4">
+            <AuthorizeView>
+                <Authorized>
+                    Hello, @context.User.Identity?.Name
+                </Authorized>
+            </AuthorizeView>
+             <LogInOrOut />
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
         </div>
+
 
         <article class="content px-4">
             @Body

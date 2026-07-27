@@ -16,17 +16,20 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+        <AuthorizeView>
+            <div class="nav-item px-3">
+            <NavLink class="nav-link" href="employees">
+                <span class="bi bi-people-fill-nav-menu" aria-hidden="true"></span> Employees
             </NavLink>
-        </div>
+            </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="skills">
+                    <span class="bi bi-award-fill-nav-menu" aria-hidden="true"></span> Skills
+                </NavLink>
+            </div>
+        </AuthorizeView>
+        
     </nav>
 </div>
 

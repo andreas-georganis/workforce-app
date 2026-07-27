@@ -12,9 +12,6 @@ public sealed class LastName : IParsable<LastName>
 
     public string Value { get; }
 
-    public static LastName New(string value)
-        => new(value);
-
     public static LastName Parse(string s, IFormatProvider? provider)
         => TryParse(s, provider, out var result)? result: throw new FormatException();
 

@@ -23,5 +23,8 @@
         <Project Path="src/frontend/Workforce.Web/Workforce.Web.Client/Workforce.Web.Client.csproj" />
         <Project Path="src/frontend/Workforce.Web/Workforce.Web/Workforce.Web.csproj" />
     </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/Workforce.UnitTests/Workforce.UnitTests.csproj" />
+    </Folder>
   
 </Solution>

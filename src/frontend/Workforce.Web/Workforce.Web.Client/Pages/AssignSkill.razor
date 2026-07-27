@@ -1,0 +1,167 @@
+@page "/assign-skill"
+@attribute [Authorize]
+@inject IEmployeeClient EmployeeClient
+@inject ISkillClient SkillClient
+
+<PageTitle>Assign Skill</PageTitle>
+
+<h1>Assign Skill To Employee</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success" role="alert">
+        @successMessage
+    </div>
+}
+
+@if (isLoading)
+{
+    <p><em>Loading employees and skills...</em></p>
+}
+else
+{
+    <EditForm Model="employeeSkill" OnValidSubmit="AssignSkillAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label" for="employee">Employee</label>
+            <InputSelect id="employee" class="form-select" @bind-Value="employeeSkill.EmployeeId">
+                <option value="">Select an employee</option>
+                @foreach (var employee in employees)
+                {
+                    <option value="@employee.Id">@employee.FirstName @employee.LastName (@employee.Email)</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="skill">Skill</label>
+            <InputSelect id="skill" class="form-select" @bind-Value="employeeSkill.SkillId">
+                <option value="">Select a skill</option>
+                @foreach (var skill in skills)
+                {
+                    <option value="@skill.Id">@skill.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="proficiency">Proficiency</label>
+            <InputSelect id="proficiency" class="form-select" @bind-Value="employeeSkill.Proficiency">
+                @foreach (var proficiency in Enum.GetValues<Proficiency>())
+                {
+                    <option value="@proficiency">@proficiency</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="yearsOfExperience">Years Of Experience</label>
+            <InputNumber id="yearsOfExperience" class="form-control" @bind-Value="employeeSkill.YearsOfExperience" />
+        </div>
+
+        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">@(isSubmitting ? "Assigning..." : "Assign Skill")</button>
+    </EditForm>
+
+    <div class="mt-4">
+        <h2>Employees</h2>
+        <ResourceGrid Items="employees" EmptyMessage="No employees were found.">
+            <HeaderTemplate>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+            </HeaderTemplate>
+            <RowTemplate Context="employee">
+                <td>@employee.FirstName</td>
+                <td>@employee.LastName</td>
+                <td>@employee.Email</td>
+            </RowTemplate>
+        </ResourceGrid>
+    </div>
+}
+
+@code {
+    private readonly List<Employee> employees = [];
+    private readonly List<Skill> skills = [];
+
+    private readonly EmployeeSkill employeeSkill = new();
+
+    private bool isLoading;
+    private bool isSubmitting;
+
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override Task OnInitializedAsync()
+    {
+        // Interactive Auto renders once on the server, then hydrates in-browser.
+        // Only load API data in-browser to avoid transient prerender errors.
+        if (!OperatingSystem.IsBrowser())
+        {
+            return Task.CompletedTask;
+        }
+
+        return LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var employeesTask = EmployeeClient.GetEmployeesAsync();
+            var skillsTask = SkillClient.GetSkillsAsync();
+
+            await Task.WhenAll(employeesTask, skillsTask);
+
+            var employeesData = await employeesTask;
+            var skillsData = await skillsTask;
+
+            employees.Clear();
+            employees.AddRange(employeesData);
+
+            skills.Clear();
+            skills.AddRange(skillsData);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load form data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task AssignSkillAsync()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            await EmployeeClient.AssignSkillAsync(employeeSkill);
+            successMessage = "Skill assigned successfully.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to assign skill: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

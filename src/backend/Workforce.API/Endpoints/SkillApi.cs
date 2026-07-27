@@ -16,7 +16,10 @@ public static class SkillApi
         // paging
         group.MapGet("/", async (WorkforceDbContext db, CancellationToken cancellationToken) =>
         {
-           return await db.Skills.Select(s=> new Contracts.Skill { Id = s.Id, Name = s.Name}).ToListAsync(cancellationToken);
+              return await db.Skills
+                     .OrderBy(s => s.Name)
+                     .Select(s=> new Contracts.Skill { Id = s.Id, Name = s.Name})
+                     .ToListAsync(cancellationToken);
         });
 
         group.MapGet("/{id}", async Task<Results<Ok<Workforce.API.Contracts.Skill>, NotFound>> (WorkforceDbContext db, SkillId id, CancellationToken cancellationToken) =>
@@ -30,7 +33,7 @@ public static class SkillApi
 
         group.MapPost("/", async Task<Created<Workforce.API.Contracts.Skill>> (WorkforceDbContext db, Workforce.API.Contracts.Skill newSkill, CancellationToken cancellationToken) =>
         {
-            var skill = new Domain.Model.Skill(newSkill.Id!.Value, newSkill.Name);
+            var skill = new Domain.Model.Skill(newSkill.Id, newSkill.Name);
 
             await db.Skills.AddAsync(skill, cancellationToken);
 

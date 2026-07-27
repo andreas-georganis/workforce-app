@@ -17,7 +17,7 @@ internal static class AuthApi
         // the user will automatically be signed back in the next time they visit a page that requires authentication
         // without being able to choose another account.
         group.MapPost("/logout", ([FromForm] string? returnUrl) => TypedResults.SignOut(GetAuthProperties(returnUrl),
-            [CookieAuthenticationDefaults.AuthenticationScheme, "MicrosoftOidc"]));
+            [CookieAuthenticationDefaults.AuthenticationScheme, "oidc"]));
 
         return group;
     }

@@ -31,7 +31,7 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AddValidation();
 
-builder.Services.AddExceptionHandler<UniqueConstraintViolationExceptionHandler>();
+builder.Services.AddExceptionHandler<DefaultExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddAuthentication()
@@ -57,14 +57,14 @@ builder.AddSqlServerDbContext<WorkforceDbContext>("WorkforceDb",
             .AddInterceptors(new UniqueConstraintViolationInterceptor())
     );
 
-// builder.Services.AddHttpLogging(o =>
-// {
-//     if (builder.Environment.IsDevelopment())
-//     {
-//         o.CombineLogs = true;
-//         o.LoggingFields = HttpLoggingFields.ResponseBody | HttpLoggingFields.ResponseHeaders;
-//     }
-// });
+builder.Services.AddHttpLogging(o =>
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        o.CombineLogs = true;
+        o.LoggingFields = HttpLoggingFields.ResponseBody | HttpLoggingFields.ResponseHeaders;
+    }
+});
 
 var app = builder.Build();
 
@@ -72,7 +72,7 @@ app.MapDefaultEndpoints();
 
 app.UseExceptionHandler();
 
-//app.UseHttpLogging();
+app.UseHttpLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -84,8 +84,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.MapEmployeeApi();
-app.MapSkillApi();
+var apis = app.MapGroup("api/");
+
+apis.MapEmployeeApi();
+apis.MapSkillApi();
 
 app.Run();
 

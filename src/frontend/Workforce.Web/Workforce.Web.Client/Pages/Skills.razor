@@ -1,0 +1,283 @@
+@page "/skills"
+@attribute [Authorize]
+@inject ISkillClient SkillClient
+@inject IEmployeeClient EmployeeClient
+
+<PageTitle>Skills</PageTitle>
+
+<h1>Skills</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success" role="alert">
+        @successMessage
+    </div>
+}
+
+<div class="d-flex justify-content-end gap-2 mb-3">
+    <button class="btn btn-outline-primary" @onclick="LoadSkillsAsync" disabled="@isLoading">
+        @(isLoading ? "Loading..." : "Reload")
+    </button>
+    <button class="btn btn-primary" @onclick="ToggleCreateForm" disabled="@(isLoading || isSubmitting)">
+        @(showCreateForm ? "Cancel" : "New Skill")
+    </button>
+</div>
+
+@if (showCreateForm)
+{
+    <EditForm Model="skillDraft" OnValidSubmit="CreateSkillAsync" class="card card-body mb-3">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label" for="skill-name">Skill Name</label>
+            <InputText id="skill-name" class="form-control" @bind-Value="skillDraft.Name" />
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success" disabled="@isSubmitting">@(isSubmitting ? "Saving..." : "Save Skill")</button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="ToggleCreateForm" disabled="@isSubmitting">Close</button>
+        </div>
+    </EditForm>
+}
+
+@if (isLoading)
+{
+    <p><em>Loading skills...</em></p>
+}
+else if (skills.Count == 0)
+{
+    <p>No skills were found.</p>
+}
+else
+{
+    <ResourceGrid Items="skills" EmptyMessage="No skills were found.">
+        <HeaderTemplate>
+            <th>Name</th>
+            <th style="width: 220px;">Actions</th>
+        </HeaderTemplate>
+        <RowTemplate Context="skill">
+            <td>@skill.Name</td>
+            <td>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenAssignFormAsync(skill)" disabled="@(isLoadingAssign || isSubmittingAssign)">
+                    Assign to employee
+                </button>
+            </td>
+        </RowTemplate>
+    </ResourceGrid>
+}
+
+@if (showAssignForm && selectedSkillForAssignment is not null)
+{
+    <EditForm Model="employeeSkill" OnValidSubmit="AssignSkillAsync" class="card card-body mt-3">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <h5 class="mb-3">Assign "@selectedSkillForAssignment.Name"</h5>
+
+        <div class="mb-3">
+            <label class="form-label" for="employee">Employee</label>
+            <InputSelect id="employee" class="form-select" @bind-Value="employeeSkill.EmployeeId" disabled="@(isLoadingAssign || isSubmittingAssign)">
+                <option value="">Select an employee</option>
+                @foreach (var employee in assignableEmployees)
+                {
+                    <option value="@employee.Id">@employee.FirstName @employee.LastName (@employee.Email)</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="proficiency">Proficiency</label>
+            <InputSelect id="proficiency" class="form-select" @bind-Value="employeeSkill.Proficiency" disabled="@isSubmittingAssign">
+                @foreach (var proficiency in Enum.GetValues<Proficiency>())
+                {
+                    <option value="@proficiency">@proficiency</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="yearsOfExperience">Years Of Experience</label>
+            <InputNumber id="yearsOfExperience" class="form-control" @bind-Value="employeeSkill.YearsOfExperience" disabled="@isSubmittingAssign" />
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" disabled="@(isLoadingAssign || isSubmittingAssign || assignableEmployees.Count == 0)">
+                @(isSubmittingAssign ? "Assigning..." : "Assign Skill")
+            </button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="CloseAssignForm" disabled="@isSubmittingAssign">Close</button>
+        </div>
+
+        @if (isLoadingAssign)
+        {
+            <p class="mt-3 mb-0"><em>Loading employees without this skill...</em></p>
+        }
+        else if (assignableEmployees.Count == 0)
+        {
+            <p class="mt-3 mb-0">All employees already have this skill.</p>
+        }
+    </EditForm>
+}
+
+@code {
+    private readonly List<Skill> skills = [];
+    private readonly List<Employee> assignableEmployees = [];
+    private readonly Skill skillDraft = new();
+    private readonly EmployeeSkill employeeSkill = new();
+
+    private bool isLoading;
+    private bool isSubmitting;
+    private bool isLoadingAssign;
+    private bool isSubmittingAssign;
+    private bool showCreateForm;
+    private bool showAssignForm;
+
+    private Skill? selectedSkillForAssignment;
+
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override Task OnInitializedAsync()
+    {
+        // In Interactive Auto render mode, components initialize once on the server
+        // and then again in the browser. Load data only in-browser to avoid transient
+        // prerender errors when server-side auth context is incomplete.
+        if (!OperatingSystem.IsBrowser())
+        {
+            return Task.CompletedTask;
+        }
+
+        return LoadSkillsAsync();
+    }
+
+    private async Task LoadSkillsAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var data = await SkillClient.GetSkillsAsync();
+            skills.Clear();
+            skills.AddRange(data);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load skills: {ex.Message}";
+            skills.Clear();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ToggleCreateForm()
+    {
+        showCreateForm = !showCreateForm;
+        errorMessage = null;
+        successMessage = null;
+
+        if (!showCreateForm)
+        {
+            skillDraft.Name = string.Empty;
+        }
+    }
+
+    private async Task CreateSkillAsync()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var createdSkill = await SkillClient.CreateSkillAsync(skillDraft);
+            skills.Add(createdSkill);
+
+            successMessage = "Skill created successfully.";
+            showCreateForm = false;
+            skillDraft.Name = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to create skill: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task OpenAssignFormAsync(Skill skill)
+    {
+        selectedSkillForAssignment = skill;
+        showAssignForm = true;
+        isLoadingAssign = true;
+        errorMessage = null;
+        successMessage = null;
+
+        employeeSkill.SkillId = skill.Id;
+        employeeSkill.EmployeeId = null;
+        employeeSkill.Proficiency = Proficiency.Beginner;
+        employeeSkill.YearsOfExperience = 0;
+
+        try
+        {
+            var data = await EmployeeClient.GetEmployeesAsync(skill.Id.ToString(), false);
+
+            assignableEmployees.Clear();
+            assignableEmployees.AddRange(data);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load employees for assignment: {ex.Message}";
+            assignableEmployees.Clear();
+        }
+        finally
+        {
+            isLoadingAssign = false;
+        }
+    }
+
+    private void CloseAssignForm()
+    {
+        showAssignForm = false;
+        selectedSkillForAssignment = null;
+        assignableEmployees.Clear();
+    }
+
+    private async Task AssignSkillAsync()
+    {
+        isSubmittingAssign = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            await EmployeeClient.AssignSkillAsync(employeeSkill);
+
+            successMessage = "Skill assigned successfully.";
+
+            var assignedEmployeeId = employeeSkill.EmployeeId;
+            assignableEmployees.RemoveAll(employee => employee.Id == assignedEmployeeId);
+            employeeSkill.EmployeeId = null;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to assign skill: {ex.Message}";
+        }
+        finally
+        {
+            isSubmittingAssign = false;
+        }
+    }
+}

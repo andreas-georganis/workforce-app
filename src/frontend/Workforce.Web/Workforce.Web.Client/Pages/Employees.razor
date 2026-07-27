@@ -1,0 +1,147 @@
+@page "/employees"
+@attribute [Authorize]
+@inject IEmployeeClient EmployeeClient
+@inject ISkillClient SkillClient
+
+<PageTitle>Employees</PageTitle>
+
+<h1>Employees</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
+    <div>
+        <label class="form-label" for="employee-skill-filter">Skill Filter</label>
+        <InputSelect id="employee-skill-filter" class="form-select" style="max-width: 320px;" @bind-Value="selectedSkillId" disabled="@isLoading">
+            <option value="">All skills</option>
+            @foreach (var skill in skills)
+            {
+                <option value="@skill.Id">@skill.Name</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-end gap-2">
+        <button class="btn btn-outline-secondary" @onclick="ApplyFilterAsync" disabled="@isLoading">Apply Filter</button>
+        <button class="btn btn-outline-secondary" @onclick="ClearFilterAsync" disabled="@isLoading || selectedSkillId is null">Clear</button>
+        <button class="btn btn-outline-primary" @onclick="LoadEmployeesAsync" disabled="@isLoading">
+            @(isLoading ? "Loading..." : "Reload")
+        </button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <p><em>Loading employees...</em></p>
+}
+else if (employees.Count == 0)
+{
+    <p>No employees were found.</p>
+}
+else
+{
+    <ResourceGrid Items="employees" EmptyMessage="No employees were found.">
+        <HeaderTemplate>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+        </HeaderTemplate>
+        <RowTemplate Context="employee">
+            <td>@employee.FirstName</td>
+            <td>@employee.LastName</td>
+            <td>@employee.Email</td>
+        </RowTemplate>
+    </ResourceGrid>
+}
+
+@code {
+    private readonly List<Employee> employees = [];
+    private readonly List<Skill> skills = [];
+    private Guid? selectedSkillId;
+
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override Task OnInitializedAsync()
+    {
+        // Interactive Auto renders once on the server, then hydrates in-browser.
+        // Only load API data in-browser to avoid transient prerender errors.
+        if (!OperatingSystem.IsBrowser())
+        {
+            return Task.CompletedTask;
+        }
+
+        return LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var employeesTask = EmployeeClient.GetEmployeesAsync(selectedSkillId?.ToString(), true);
+            var skillsTask = SkillClient.GetSkillsAsync();
+
+            await Task.WhenAll(employeesTask, skillsTask);
+
+            var employeesData = await employeesTask;
+            var skillsData = await skillsTask;
+
+            employees.Clear();
+            employees.AddRange(employeesData);
+
+            skills.Clear();
+            skills.AddRange(skillsData);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load employees: {ex.Message}";
+            employees.Clear();
+            skills.Clear();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadEmployeesAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var data = await EmployeeClient.GetEmployeesAsync(selectedSkillId?.ToString(), true);
+            employees.Clear();
+            employees.AddRange(data);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load employees: {ex.Message}";
+            employees.Clear();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private Task ApplyFilterAsync()
+    {
+        return LoadEmployeesAsync();
+    }
+
+    private Task ClearFilterAsync()
+    {
+        selectedSkillId = null;
+        return LoadEmployeesAsync();
+    }
+}

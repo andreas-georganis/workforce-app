@@ -15,7 +15,7 @@ public static class EmployeeApi
 
         group.MapPost("/", async Task<Created<Workforce.API.Contracts.Employee>> (WorkforceDbContext db, Workforce.API.Contracts.Employee newEmployee, CancellationToken cancellationToken) =>
         {
-            var employee = new Workforce.Domain.Model.Employee(newEmployee.Id!.Value, newEmployee.FirstName, newEmployee.LastName, newEmployee.Email, []);
+            var employee = new Workforce.Domain.Model.Employee(newEmployee.Id, newEmployee.FirstName, newEmployee.LastName, newEmployee.Email, []);
 
             await db.Employees.AddAsync(employee, cancellationToken);
 
@@ -32,21 +32,24 @@ public static class EmployeeApi
         });
 
         //TODO: IAsyncEnumerable, Paging
-        group.MapGet("/", async Task<Ok<IEnumerable<Workforce.API.Contracts.Employee>>> (SkillName? skill, WorkforceDbContext db,  CancellationToken cancellationToken) =>
+        group.MapGet("/", async Task<Ok<IEnumerable<Workforce.API.Contracts.Employee>>> (Workforce.API.Contracts.SkillIdentifier? skill, WorkforceDbContext db, CancellationToken cancellationToken, bool includeMatchingSkill = true) =>
         {
             IQueryable<Employee> query = db.Employees;
 
             if (skill is not null)
             {
-                // Get the IDs of all skills with the given name
-                var skillIds = db.Skills
-                    .Where(sk => sk.Name == skill)
-                    .Select(sk => sk.Id);
-
-                query = query.Where(e => e.Skills.Any(es => skillIds.Contains(es.SkillId)));
+                query = skill.Value.Id is not null
+                    ? includeMatchingSkill
+                        ? query.Where(e => e.Skills.Any(es => es.SkillId == skill.Value.Id.Value))
+                        : query.Where(e => e.Skills.All(es => es.SkillId != skill.Value.Id.Value))
+                    : includeMatchingSkill
+                        ? query.Where(e => e.Skills.Any(es => db.Skills.Any(sk => sk.Id == es.SkillId && sk.Name == skill.Value.Name)))
+                        : query.Where(e => e.Skills.All(es => !db.Skills.Any(sk => sk.Id == es.SkillId && sk.Name == skill.Value.Name)));
             }
 
             var employees = await query
+                .OrderBy(e => e.LastName)
+                .ThenBy(e => e.FirstName)
                 .Select(e => new Workforce.API.Contracts.Employee
                 {
                     Id = e.Id,
