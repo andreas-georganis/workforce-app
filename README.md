@@ -48,6 +48,10 @@ dotnet run --project src/aspire/Workforce.AppHost/Workforce.AppHost.csproj
 ## Local Authentication (Dex)
 Dex is configured for local development in AppHost.
 
+The Blazor web app uses these local auth routes:
+- Sign in: `/authentication/login`
+- Sign out: `/authentication/logout`
+
 Default local test user from Dex config:
 - Username: `admin`
 - Password: `password`
@@ -75,10 +79,11 @@ aspire stop --apphost src/aspire/Workforce.AppHost/Workforce.AppHost.csproj
 ```
 
 ## Functional Notes
-- Employees can be filtered by skill via API query parameters.
+- Employees can be added and filtered by skill.
 - Skills are managed in the Skills page (reload/create).
 - Skill assignment is performed from the Skills UI flow.
 - Sorting is performed by the API rather than page-level sorting.
+- The web app forwards backend calls under `/api/employees` and `/api/skills` to avoid route collisions with Blazor pages.
 
 ## Documentation Notes
 - API endpoints are defined under `src/backend/Workforce.API/Endpoints`.
@@ -87,7 +92,7 @@ aspire stop --apphost src/aspire/Workforce.AppHost/Workforce.AppHost.csproj
 
 ## Prompt / Agent Usage Disclosure
 This solution was developed with AI-assisted tooling (GitHub Copilot chat/agent workflow) for:
-- code navigation and refactoring,
+- refactoring,
 - endpoint and UI wiring changes,
 - iterative debugging and build verification,
 - documentation drafting.
@@ -99,4 +104,3 @@ The following work was not done by the agent:
 - API interface design decisions (resource shape, endpoint semantics, and contracts).
 - Solution structure and overall architecture decisions.
 - High-level technical design/trade-off decisions.
-
