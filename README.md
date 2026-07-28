@@ -37,13 +37,15 @@ dotnet restore
 dotnet build
 ```
 
-3. Start the full local stack with Aspire AppHost:
+3. Ensure Docker Desktop is up and running.
+
+4. Start the full local stack with Aspire AppHost:
 
 ```bash
 dotnet run --project src/aspire/Workforce.AppHost/Workforce.AppHost.csproj
 ```
 
-4. Open the Aspire dashboard URL printed in the terminal, then launch the `workforce-web` app from there.
+5. Open the Aspire dashboard URL printed in the terminal, then launch the `workforce-web` app from there.
 
 ## Local Authentication (Dex)
 Dex is configured for local development in AppHost.
