@@ -1,5 +1,6 @@
 {
   "appHost": {
-    "path": "Workforce.AppHost.csproj"
+    "path": "Workforce.AppHost.csproj",
+    "language": "csharp"
   }
 }

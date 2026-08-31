@@ -10,8 +10,10 @@ var sqlserver = builder
 var db = sqlserver.AddDatabase("WorkforceDb");
 
 var dexYaml = Path.Combine(AppContext.BaseDirectory, "dex-config.yaml");
-var dex = builder.AddContainer("dex", "ghcr.io/dexidp/dex", "latest")
-     .WithHttpEndpoint(
+var dex = builder
+    .AddContainer("dex", "ghcr.io/dexidp/dex", "latest")
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithHttpEndpoint(
         name: "http",
         port: 5556,          // fixed host port
         targetPort: 5556,

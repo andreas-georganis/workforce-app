@@ -16,7 +16,6 @@ class EmployeeEntityTypeConfiguration : IEntityTypeConfiguration<Employee>
                 v => new EmployeeId(v))
             .HasColumnName("Id")
             .HasDefaultValueSql("NEWSEQUENTIALID()")
-            .ValueGeneratedNever()
             .IsRequired();
 
         builder.Property(x=>x.FirstName)

@@ -6,7 +6,8 @@ namespace Workforce.Domain.Model;
 [JsonConverter(typeof(ParsableJsonConverter<SkillId>))]
 public readonly record struct SkillId(Guid Value) : IParsable<SkillId>
 {
-    public static SkillId New() => new(Guid.CreateVersion7());
+    public static SkillId New()
+        => new(UUIDNext.Uuid.NewDatabaseFriendly(UUIDNext.Database.SqlServer));
 
     public static SkillId Parse(string s, IFormatProvider? provider)
         => TryParse(s, provider, out var result)? result: throw new FormatException();

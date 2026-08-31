@@ -5,7 +5,9 @@ namespace Workforce.Domain.Model;
 [JsonConverter(typeof(ParsableJsonConverter<EmployeeId>))]
 public readonly record struct EmployeeId : IParsable<EmployeeId>
 {
-    public static EmployeeId New() => new(Guid.CreateVersion7());
+    public static EmployeeId New()
+    // => new(Guid.CreateVersion7());
+    => new(UUIDNext.Uuid.NewDatabaseFriendly(UUIDNext.Database.SqlServer));
 
     public EmployeeId(Guid value)
     {

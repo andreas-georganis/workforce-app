@@ -9,7 +9,7 @@ public static class EmployeeApi
 {
     public static RouteGroupBuilder MapEmployeeApi(this IEndpointRouteBuilder routes)
     {
-        var group = routes.MapGroup("/employees").RequireAuthorization();
+        var group = routes.MapGroup("/employees");//.RequireAuthorization();
 
         group.WithTags("Employees");
 
