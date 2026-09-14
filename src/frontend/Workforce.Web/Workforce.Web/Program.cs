@@ -102,14 +102,24 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<TokenHandler>();
 
-builder.Services.AddHttpClient<IEmployeeClient, ServerEmployeeClient>(httpClient =>
+builder.Services.AddHttpClient<IEmployeeClient, Workforce.Web.Clients.EmployeeClient>(httpClient =>
 {
     httpClient.BaseAddress = new Uri("http://workforce-api");
+    httpClient.DefaultRequestHeaders.Add("X-Api-Version", "1.0");
 })
 .AddHttpMessageHandler<TokenHandler>();
-builder.Services.AddHttpClient<ISkillClient, ServerSkillClient>(httpClient =>
+
+builder.Services.AddHttpClient<ISkillClient, Workforce.Web.Clients.SkillClient>(httpClient =>
 {
     httpClient.BaseAddress = new Uri("http://workforce-api");
+    httpClient.DefaultRequestHeaders.Add("X-Api-Version", "1.0");
+})
+.AddHttpMessageHandler<TokenHandler>();
+
+builder.Services.AddHttpClient<IEmployeeSkillClient, Workforce.Web.Clients.EmployeeSkillClient>(httpClient =>
+{
+    httpClient.BaseAddress = new Uri("http://workforce-api");
+    httpClient.DefaultRequestHeaders.Add("X-Api-Version", "1.0");
 })
 .AddHttpMessageHandler<TokenHandler>();
 
@@ -121,32 +131,32 @@ builder.Services.AddRazorComponents()
 
 var app = builder.Build();
 
-app.MapDefaultEndpoints();
-
-app.MapGroup("/authentication").MapAuthApi();
-app.MapEmployeeApi();
-app.MapSkillApi();
-
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseWebAssemblyDebugging();
-}
-else
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+
+app.MapDefaultEndpoints();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(Workforce.Web.Client._Imports).Assembly);
+
+app.MapGroup("/authentication").MapAuthApi();
+
+app.MapEmployeeApi();
+app.MapSkillApi();
+app.MapEmployeeSkillApi();
 
 app.Run();

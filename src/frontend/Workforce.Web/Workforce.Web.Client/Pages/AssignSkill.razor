@@ -3,6 +3,8 @@
 @inject IEmployeeClient EmployeeClient
 @inject ISkillClient SkillClient
 
+@inject IEmployeeSkillClient EmployeeSkillClient
+
 <PageTitle>Assign Skill</PageTitle>
 
 <h1>Assign Skill To Employee</h1>
@@ -73,7 +75,7 @@ else
 
     <div class="mt-4">
         <h2>Employees</h2>
-        <ResourceGrid Items="employees" EmptyMessage="No employees were found.">
+        <Grid Items="employees" EmptyMessage="No employees were found.">
             <HeaderTemplate>
                 <th>First Name</th>
                 <th>Last Name</th>
@@ -84,7 +86,7 @@ else
                 <td>@employee.LastName</td>
                 <td>@employee.Email</td>
             </RowTemplate>
-        </ResourceGrid>
+        </Grid>
     </div>
 }
 
@@ -120,8 +122,8 @@ else
 
         try
         {
-            var employeesTask = EmployeeClient.GetEmployeesAsync();
-            var skillsTask = SkillClient.GetSkillsAsync();
+            var employeesTask = EmployeeClient.GetEmployees();
+            var skillsTask = SkillClient.GetSkills();
 
             await Task.WhenAll(employeesTask, skillsTask);
 
@@ -152,7 +154,7 @@ else
 
         try
         {
-            await EmployeeClient.AssignSkillAsync(employeeSkill);
+            await EmployeeSkillClient.AssignSkill(employeeSkill);
             successMessage = "Skill assigned successfully.";
         }
         catch (Exception ex)

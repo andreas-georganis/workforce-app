@@ -3,6 +3,8 @@
 @inject ISkillClient SkillClient
 @inject IEmployeeClient EmployeeClient
 
+@inject IEmployeeSkillClient EmployeeSkillClient
+
 <PageTitle>Skills</PageTitle>
 
 <h1>Skills</h1>
@@ -58,7 +60,7 @@ else if (skills.Count == 0)
 }
 else
 {
-    <ResourceGrid Items="skills" EmptyMessage="No skills were found.">
+    <Grid Items="skills" EmptyMessage="No skills were found.">
         <HeaderTemplate>
             <th>Name</th>
             <th style="width: 220px;">Actions</th>
@@ -71,7 +73,7 @@ else
                 </button>
             </td>
         </RowTemplate>
-    </ResourceGrid>
+    </Grid>
 }
 
 @if (showAssignForm && selectedSkillForAssignment is not null)
@@ -146,10 +148,8 @@ else
 
     protected override Task OnInitializedAsync()
     {
-        // In Interactive Auto render mode, components initialize once on the server
-        // and then again in the browser. Load data only in-browser to avoid transient
-        // prerender errors when server-side auth context is incomplete.
-        if (!OperatingSystem.IsBrowser())
+        // Skip only the static prerender pass; run once interactive (Server or WebAssembly).
+        if (!RendererInfo.IsInteractive)
         {
             return Task.CompletedTask;
         }
@@ -165,7 +165,7 @@ else
 
         try
         {
-            var data = await SkillClient.GetSkillsAsync();
+            var data = await SkillClient.GetSkills();
             skills.Clear();
             skills.AddRange(data);
         }
@@ -200,7 +200,7 @@ else
 
         try
         {
-            var createdSkill = await SkillClient.CreateSkillAsync(skillDraft);
+            var createdSkill = await SkillClient.CreateSkill(skillDraft);
             skills.Add(createdSkill);
 
             successMessage = "Skill created successfully.";
@@ -232,7 +232,7 @@ else
 
         try
         {
-            var data = await EmployeeClient.GetEmployeesAsync(skill.Id.ToString(), false);
+            var data = await EmployeeClient.GetEmployees(skill.Id.ToString(), false);
 
             assignableEmployees.Clear();
             assignableEmployees.AddRange(data);
@@ -263,7 +263,7 @@ else
 
         try
         {
-            await EmployeeClient.AssignSkillAsync(employeeSkill);
+            await EmployeeSkillClient.AssignSkill(employeeSkill);
 
             successMessage = "Skill assigned successfully.";
 

@@ -24,6 +24,8 @@
         <Project Path="src/frontend/Workforce.Web/Workforce.Web/Workforce.Web.csproj" />
     </Folder>
     <Folder Name="/tests/">
+        <Project Path="tests/Workforce.E2ETests/Workforce.E2ETests.csproj" />
+        <Project Path="tests/Workforce.IntegrationTests/Workforce.IntegrationTests.csproj" />
         <Project Path="tests/Workforce.UnitTests/Workforce.UnitTests.csproj" />
     </Folder>
   

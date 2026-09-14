@@ -2,7 +2,6 @@
 
 using Workforce.Domain.Exceptions;
 using Workforce.Domain.Model;
-using Xunit;
 
 public class EmployeeTests
 {

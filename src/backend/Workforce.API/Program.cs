@@ -1,14 +1,14 @@
 using System.Text.Json.Serialization;
+using Asp.Versioning;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Microsoft.AspNetCore.OpenApi;
 using Workforce.API;
-using Workforce.API.Contracts;
 using Workforce.API.Endpoints;
 using Workforce.API.OpenApi;
 using Workforce.Infrastructure;
-using WorkForce.API.Endpoints;
+using Asp.Versioning.Builder;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
@@ -23,8 +23,10 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi(options =>
 {
+    //options.AddScalarTransformers();
     options.AddSchemaTransformer<ValueObjectTransformer>();
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+
 });
 
 //builder.Services.AddDataProtection(o => o.ApplicationDiscriminator = "WorkforceApp");
@@ -33,6 +35,30 @@ builder.Services.AddValidation();
 
 builder.Services.AddExceptionHandler<DefaultExceptionHandler>();
 builder.Services.AddProblemDetails();
+
+builder.Services.AddApiVersioning(options =>
+{
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = ApiVersionReader.Combine(
+        new QueryStringApiVersionReader(),
+        new MediaTypeApiVersionReader(),
+        new HeaderApiVersionReader("X-Api-Version"),
+        new UrlSegmentApiVersionReader());
+})
+.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+// .AddOpenApi( options =>
+// {
+//     options.Document.AddScalarTransformers();
+//     options.Document.AddSchemaTransformer<ValueObjectTransformer>();
+//     options.Document.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+
+// });
 
 builder.Services.AddAuthentication()
     .AddJwtBearer("Bearer", jwtOptions =>
@@ -76,20 +102,29 @@ app.UseHttpLogging();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi();//.WithDocumentPerVersion();
     app.MapScalarApiReference(options =>
     {
         options.Servers = [];
         options.Authentication = new() { PreferredSecuritySchemes = ["Bearer"] };
+
+        var descriptions = app.DescribeApiVersions();
+
+        for ( var i = 0; i < descriptions.Count; i++ )
+        {
+            var description = descriptions[i];
+            var isDefault = i == descriptions.Count - 1;
+
+            options.AddDocument( description.GroupName, description.GroupName, isDefault: isDefault );
+        }
     });
 }
 
-var apis = app.MapGroup("api/");
+app.MapEmployeeApi().ToV1();
+app.MapSkillApi().ToV1();
+app.MapEmployeeSkillApi().ToV1();
 
-apis.MapEmployeeApi();
-apis.MapSkillApi();
-
-app.Run();
+await app.RunAsync();
 
 
 

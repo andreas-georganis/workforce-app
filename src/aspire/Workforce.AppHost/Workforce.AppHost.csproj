@@ -18,6 +18,7 @@
     <PackageReference Include="Aspire.Hosting.EntityFrameworkCore" />
     <PackageReference Include="Aspire.Hosting.SqlServer" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.SqlServer.Extensions" />
+    <PackageReference Include="Scalar.Aspire" />
     <!-- <PackageReference Include="Microsoft.Extensions.Hosting" /> -->
   </ItemGroup>
 

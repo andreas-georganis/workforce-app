@@ -5,13 +5,13 @@ namespace Workforce.Web.Client.Clients;
 
 public sealed class SkillClient(HttpClient httpClient) : ISkillClient
 {
-    public async Task<IReadOnlyList<Skill>> GetSkillsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Skill>> GetSkills(CancellationToken cancellationToken = default)
     {
         var skills = await httpClient.GetFromJsonAsync<List<Skill>>("api/skills", cancellationToken);
         return skills ?? [];
     }
 
-    public async Task<Skill?> CreateSkillAsync(Skill skill, CancellationToken cancellationToken = default)
+    public async Task<Skill?> CreateSkill(Skill skill, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(skill);
 

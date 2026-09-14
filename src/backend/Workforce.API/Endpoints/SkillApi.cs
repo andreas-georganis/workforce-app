@@ -1,3 +1,4 @@
+using Asp.Versioning.Builder;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Workforce.Domain.Model;
@@ -5,33 +6,59 @@ using Workforce.Infrastructure;
 
 namespace Workforce.API.Endpoints;
 
+public sealed class SkillApiBuilder(IVersionedEndpointRouteBuilder builder) : VersionedApiBuilder(builder);
+
 public static class SkillApi
 {
-    public static RouteGroupBuilder MapSkillApi(this IEndpointRouteBuilder routes)
+    extension(IEndpointRouteBuilder app)
     {
-        var group = routes.MapGroup("/skills").RequireAuthorization();
+        public SkillApiBuilder MapSkillApi()
+            => new (app.NewVersionedApi("Skills"));
+    }
 
-        group.WithTags("Skills");
-
-        // paging
-        group.MapGet("/", async (WorkforceDbContext db, CancellationToken cancellationToken) =>
+    extension (SkillApiBuilder apiBuilder)
+    {
+        public VersionedApiBuilder<Contracts.Skill> ToV1()
         {
-              return await db.Skills
-                     .OrderBy(s => s.Name)
-                     .Select(s=> new Contracts.Skill { Id = s.Id, Name = s.Name})
-                     .ToListAsync(cancellationToken);
-        });
+            var skills = new VersionedApiBuilder<Contracts.Skill>(apiBuilder.Endpoints);
 
-        group.MapGet("/{id}", async Task<Results<Ok<Workforce.API.Contracts.Skill>, NotFound>> (WorkforceDbContext db, SkillId id, CancellationToken cancellationToken) =>
+            var builder = skills.Endpoints;
+
+            var group = skills.Endpoints.MapGroup("/api/skills").RequireAuthorization();
+
+            group.MapGet("/", V1.Get);
+
+            group.MapGet("/{id}", V1.GetById);
+
+            group.MapPost("/", V1.Post)
+            .ProducesValidationProblem(StatusCodes.Status400BadRequest);
+
+            return new(builder);
+        }
+    }
+
+    public static class V1
+    {
+        internal static async Task<Ok<IEnumerable<Contracts.Skill>>> Get(WorkforceDbContext db, CancellationToken cancellationToken)
+        {
+            var skills = await db.Skills
+                .OrderBy(s => s.Name)
+                .Select(s => new Contracts.Skill { Id = s.Id, Name = s.Name })
+                .ToListAsync(cancellationToken);
+
+            return TypedResults.Ok<IEnumerable<Contracts.Skill>>(skills);
+        }
+
+        internal static async Task<Results<Ok<Contracts.Skill>, NotFound>> GetById(WorkforceDbContext db, SkillId id, CancellationToken cancellationToken)
         {
             return await db.Skills.FindAsync([id], cancellationToken) switch
             {
-                Skill skill => TypedResults.Ok(new Contracts.Skill { Id = skill.Id, Name = skill.Name}),
+                Skill skill => TypedResults.Ok(new Contracts.Skill { Id = skill.Id, Name = skill.Name }),
                 _ => TypedResults.NotFound()
             };
-        });
+        }
 
-        group.MapPost("/", async Task<Created<Workforce.API.Contracts.Skill>> (WorkforceDbContext db, Workforce.API.Contracts.Skill newSkill, CancellationToken cancellationToken) =>
+        internal static async Task<Created<Contracts.Skill>> Post(WorkforceDbContext db, Contracts.Skill newSkill, CancellationToken cancellationToken)
         {
             var skill = new Domain.Model.Skill(newSkill.Id, newSkill.Name);
 
@@ -39,9 +66,7 @@ public static class SkillApi
 
             await db.SaveChangesAsync(cancellationToken);
 
-            return TypedResults.Created($"/skills/{skill.Id.Value}", new Contracts.Skill { Id = skill.Id, Name = skill.Name});
-        });
-
-        return group;
+            return TypedResults.Created($"/skills/{skill.Id.Value}", new Contracts.Skill { Id = skill.Id, Name = skill.Name });
+        }
     }
 }

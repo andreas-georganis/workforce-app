@@ -83,7 +83,7 @@ else if (employees.Count == 0)
 }
 else
 {
-    <ResourceGrid Items="employees" EmptyMessage="No employees were found.">
+    <Grid Items="employees" EmptyMessage="No employees were found.">
         <HeaderTemplate>
             <th>First Name</th>
             <th>Last Name</th>
@@ -94,7 +94,7 @@ else
             <td>@employee.LastName</td>
             <td>@employee.Email</td>
         </RowTemplate>
-    </ResourceGrid>
+    </Grid>
 }
 
 @code {
@@ -112,9 +112,8 @@ else
 
     protected override Task OnInitializedAsync()
     {
-        // Interactive Auto renders once on the server, then hydrates in-browser.
-        // Only load API data in-browser to avoid transient prerender errors.
-        if (!OperatingSystem.IsBrowser())
+        // Skip only the static prerender pass; run once interactive (Server or WebAssembly).
+        if (!RendererInfo.IsInteractive)
         {
             return Task.CompletedTask;
         }
@@ -130,8 +129,8 @@ else
 
         try
         {
-            var employeesTask = EmployeeClient.GetEmployeesAsync(selectedSkillId?.ToString(), true);
-            var skillsTask = SkillClient.GetSkillsAsync();
+            var employeesTask = EmployeeClient.GetEmployees(selectedSkillId?.ToString(), true);
+            var skillsTask = SkillClient.GetSkills();
 
             await Task.WhenAll(employeesTask, skillsTask);
 
@@ -164,7 +163,7 @@ else
 
         try
         {
-            var data = await EmployeeClient.GetEmployeesAsync(selectedSkillId?.ToString(), true);
+            var data = await EmployeeClient.GetEmployees(selectedSkillId?.ToString(), true);
             employees.Clear();
             employees.AddRange(data);
         }
@@ -212,7 +211,7 @@ else
 
         try
         {
-            var createdEmployee = await EmployeeClient.CreateEmployeeAsync(employeeDraft);
+            var createdEmployee = await EmployeeClient.CreateEmployee(employeeDraft);
             if (createdEmployee is not null)
             {
                 employees.Add(createdEmployee);

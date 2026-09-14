@@ -20,22 +20,46 @@ public class DefaultExceptionHandler : IExceptionHandler
     {
         _logger.LogError(exception, "{message}", exception.Message);
 
-        var details = new ProblemDetails
+        var statusCode = exception switch
         {
-            Title = "An error occurred",
-            Detail = exception.Message,
-            Status = exception switch
+            UniqueConstraintViolationException => StatusCodes.Status409Conflict,
+            WorkforceDomainException => StatusCodes.Status400BadRequest,
+            _ => StatusCodes.Status500InternalServerError
+        };
+
+        httpContext.Response.StatusCode = statusCode;
+
+        ProblemDetails details = statusCode switch
+        {
+            StatusCodes.Status400BadRequest => new ValidationProblemDetails
             {
-                UniqueConstraintViolationException => StatusCodes.Status409Conflict,
-                WorkforceDomainException => StatusCodes.Status400BadRequest,
-                _ => StatusCodes.Status500InternalServerError
+                Title = "An error occurred",
+                Detail = exception.Message,
+                Status = statusCode,
+                Instance = httpContext.Request.Path,
+                Extensions =
+                {
+                    ["traceId"] = httpContext.TraceIdentifier,
+                },
+                Errors =
+                {
+                    ["error"] = new[] { exception.Message }
+                }
             },
-            Instance = httpContext.Request.Path,
-            Extensions =
+            _ => new ProblemDetails
             {
-                ["traceId"] = httpContext.TraceIdentifier,
+                Title = "An error occurred",
+                Detail = "Please contact support",//exception.Message,
+                Status = statusCode,
+                Instance = httpContext.Request.Path,
+                Extensions =
+                {
+                    ["traceId"] = httpContext.TraceIdentifier,
+                }
             }
         };
+
+        //httpContext.Response.ContentType = "application/problem+json";
 
         var context = new ProblemDetailsContext
         {
@@ -45,37 +69,5 @@ public class DefaultExceptionHandler : IExceptionHandler
         };
 
         return await _problemDetailsService.TryWriteAsync(context);
-
-
-        // if (exception is UniqueConstraintViolationException uniqueConstraintViolationEx)
-        // {
-        //     httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
-        //     httpContext.Response.ContentType = "application/json";
-
-        //     var response = new
-        //     {
-        //         error = uniqueConstraintViolationEx.Message,
-        //         property = uniqueConstraintViolationEx.PropertyName
-        //     };
-
-        //     await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
-        //     return true; // handled
-        // }
-
-        // if (exception is WorkforceDomainException domainException)
-        // {
-        //     httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-        //     httpContext.Response.ContentType = "application/json";
-
-        //     var response = new
-        //     {
-        //         error = domainException.Message
-        //     };
-
-        //     await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
-        //     return true; // handled
-        // }
-
-        // return false; // let other handlers (like the default) deal with it
     }
 }
