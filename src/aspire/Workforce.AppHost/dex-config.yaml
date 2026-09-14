@@ -186,7 +186,7 @@ staticClients:
   - 'http://localhost:5051/signout-callback-oidc'
   - 'https://localhost:7234/signout-callback-oidc'
   name: 'Workforce App'
-  secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+  secretEnv: DEX_WORKFORCE_APP_CLIENT_SECRET
   # Optional: restrict which connectors this client can use for authentication.
   # If omitted or empty, all connectors are allowed.
   # allowedConnectors:

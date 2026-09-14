@@ -19,6 +19,8 @@ public static class DistributedApplicationBuilderExtensions
         internal IResourceBuilder<ContainerResource> AddDex()
         {
             var dexYaml = Path.Combine(AppContext.BaseDirectory, "dex-config.yaml");
+            var clientSecret = builder.Configuration["OIDC:ClientSecret"]
+                ?? throw new InvalidOperationException("OIDC:ClientSecret must be configured for Dex.");
             var dex = builder
                 .AddContainer("dex", "ghcr.io/dexidp/dex")
                 .WithLifetime(ContainerLifetime.Persistent)
@@ -29,6 +31,7 @@ public static class DistributedApplicationBuilderExtensions
                     isProxied: false     // we want direct access for OIDC redirects
                 )
                 .WithEnvironment("DEX_SESSIONS_ENABLED", "true")
+                .WithEnvironment("DEX_WORKFORCE_APP_CLIENT_SECRET", clientSecret)
                 .WithBindMount(dexYaml, "/etc/dex/config.docker.yaml")
                 .WithArgs("dex", "serve", "/etc/dex/config.docker.yaml");
 
@@ -67,6 +70,8 @@ public static class DistributedApplicationBuilderExtensions
 
         internal IResourceBuilder<ProjectResource> AddWorkforceWeb(IResourceBuilder<ProjectResource> api)
         {
+            var clientSecret = builder.Configuration["OIDC:ClientSecret"]
+                ?? throw new InvalidOperationException("OIDC:ClientSecret must be configured for the web application.");
             var web = builder.AddProject<Projects.Workforce_Web>("workforce-web")
             //.WithHttpEndpoint(targetPort: 5000)
             .WithReference(api)
@@ -74,7 +79,7 @@ public static class DistributedApplicationBuilderExtensions
             .WithExternalHttpEndpoints()
             .WithEnvironment("OIDC__Authority", "http://127.0.0.1:5556/dex")
             .WithEnvironment("OIDC__ClientId", "workforce-app")
-            .WithEnvironment("OIDC__ClientSecret", "ZXhhbXBsZS1hcHAtc2VjcmV0");
+            .WithEnvironment("OIDC__ClientSecret", clientSecret);
 
             return web;
         }
